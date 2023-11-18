@@ -23,7 +23,7 @@ import subprocess
 # import rs decoder
 from reedsolo import RSCodec, ReedSolomonError
 # goign to vary this
-rsc = RSCodec(100)
+rsc = RSCodec(53)
 
 uri = "mongodb+srv://Ankur2227:Ankur2227%40ATLAS@cluster0.c5wmkok.mongodb.net/?retryWrites=true&w=majority"
 
@@ -173,24 +173,41 @@ def register_user():
                        
         count_keys = 100
         lc_count = 0
-        private_message = ""
+        private_message = []
         for val in list:
-            private_message += str(int(BLA_intermediate[val[0]][val[1]]))
+            private_message.append(int(BLA_intermediate[val[0]][val[1]]))
             lc_count = lc_count + 1
             if(lc_count == count_keys):
                 break
-        from zfec import Decoder
-        print(private_message)
-   
+        # print("encode")
+        # print(private_message)
+        import random_string
+        special_string = random_string.get_random_string(150)
+        special_string = bytes(special_string, encoding='utf8')
+        encoded_private_message = rsc.encode(special_string)
+        print("Encoded below which we will get later")
+        print(encoded_private_message)
+        encoded_private_arr = random_string.string2array(encoded_private_message)
+        
+        for i in range(len(private_message),len(encoded_private_message)):
+            private_message.append(0)
+        # padding
+
+        xr = []
+        for i in range(len(encoded_private_message)):
+            xr.append((private_message[i] ^ encoded_private_message[i]))
+        # print(xr)
         import rsa
         p = 17
         q = 23
         public, private = rsa.generate_keypair(p, q)
-        hashed = rsa.hashFunction(private_message)
+        hashed = rsa.hashFunction(special_string)
         print(hashed)
+        print(xr)
         obj = {}
         obj['name'] = user_data["name"]
-        obj['fuse'] = hashed
+        obj['hash'] = hashed
+        obj['xor'] = xr
         result = users_collection.insert_one(obj)
         if result.acknowledged:
             return jsonify({"message": "User data stored in MongoDB."})
@@ -217,8 +234,13 @@ def login_user():
     # if not user_data:
     #     return "User not found."
 
-    # hashed_enroll = user_data.get("fuse")
-    hashed_enroll = 1
+    # hashed_enroll = user_data.get("hash")
+    hashed_enroll = "942153873d38c567ca3fd7589b74301f417ce922cb35691d389ad8581214658b"
+    # xor_data = user_data.get("xor")
+    xor_data =[102, 121, 103, 120, 104, 112, 119, 121, 120, 116, 100, 122, 118, 107, 112, 112, 110, 98, 118, 119, 107, 99, 113, 104, 111, 112, 116, 104, 96, 113, 103, 116, 109, 109, 105, 120, 115, 104, 106, 120, 112, 112, 98, 106, 108, 96, 118, 96, 118, 101, 104, 98, 103, 111, 104, 119, 108, 111, 101, 100, 101, 116, 97, 
+116, 117, 114, 102, 109, 110, 105, 100, 121, 101, 102, 102, 103, 105, 111, 96, 123, 110, 118, 96, 122, 117, 101, 114, 105, 105, 113, 103, 122, 120, 102, 99, 121, 99, 113, 107, 121, 97, 109, 100, 108, 115, 109, 98, 121, 121, 115, 114, 107, 116, 109, 103, 108, 97, 114, 109, 120, 108, 120, 111, 107, 112, 115, 
+118, 122, 97, 110, 108, 114, 120, 108, 120, 122, 106, 119, 114, 111, 120, 108, 113, 121, 114, 107, 120, 98, 115, 108, 194, 121, 219, 129, 14, 67, 36, 57, 
+76, 83, 206, 150, 48, 88, 149, 97, 54, 250, 54, 204, 171, 215, 170, 164, 86, 227, 143, 153, 253, 231, 173, 217, 86, 122, 111, 61, 223, 103, 10, 160, 87, 224, 61, 100, 189, 106, 68, 217, 242, 101, 104, 55, 251]
     fingerprint_database_image = cv2.imread("download.jpeg")
 # print(fingerprint_database_image.shape)
     fingerprint_database_image = cv2.resize(fingerprint_database_image,(90,90))
@@ -270,22 +292,32 @@ def login_user():
                     
     count_keys = 100
     lc_count = 0
-    private_message = ""
+    private_message = []
     for val in list:
-        private_message += str(int(BLA_intermediate[val[0]][val[1]]))
+        private_message.append(int(BLA_intermediate[val[0]][val[1]]))
         lc_count = lc_count + 1
         if(lc_count == count_keys):
             break
-    from zfec import Decoder
+    
+    # get the xored data to be sent to decoder
 
-    print(private_message)
+    encoded_message = []
+
+    for i in range(len(private_message),len(xor_data)):
+        private_message.append(0)
+
+    for i in range(0,len(xor_data)):
+        encoded_message.append(xor_data[i] ^ (private_message[i]))
+    print(encoded_message)
     import rsa
-    p = 17
-    q = 23
-    public, private = rsa.generate_keypair(p, q)
-    hashed_auth = rsa.hashFunction(private_message)
-    print(hashed_auth)
-    print(hashed_enroll)
+    import random_string
+    encoded_message = random_string.array2string(encoded_message)
+    encoded_message = bytes(encoded_message, encoding='utf8')
+    print("The encoded message is here:")
+    print(encoded_message)
+    decoded_message = rsc.decode(encoded_message)
+    hashed_auth = rsa.hashFunction(decoded_message)
+    
     if hashed_auth == hashed_enroll:
         return jsonify({"message": "Login Successful."})
     else:

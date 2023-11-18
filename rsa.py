@@ -94,7 +94,7 @@ def decrypt(publick, ciphertext):
     
     
 def hashFunction(message):
-    hashed = sha256(message.encode("UTF-8")).hexdigest()
+    hashed = sha256(message).hexdigest()
     return hashed
     
     

@@ -1,0 +1,5 @@
+FaceAppFrontend/
+__pycache__
+*.jpeg
+*.png
+*.pickle
