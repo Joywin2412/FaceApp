@@ -13,7 +13,7 @@ from pymongo.server_api import ServerApi
 from sklearn.decomposition import PCA
 
 # use it later
-from imgaug import augmenters as iaa
+from imgaug import augmenters as iaaz
 
 # ica
 from sklearn.decomposition import FastICA
@@ -92,18 +92,18 @@ def register_Finger():
     # try:
         # minitae points
         fingerprint_database_image = cv2.imread("download.jpeg")
-# print(fingerprint_database_image.shape)
         fingerprint_database_image = cv2.resize(fingerprint_database_image,(90,90))
         fingerprint_database_image = cv2.cvtColor(fingerprint_database_image, cv2.COLOR_BGR2GRAY)
         fingerprint_database_image = tf.expand_dims(fingerprint_database_image,axis = -1)
         fingerprint_database_image = np.expand_dims(fingerprint_database_image,axis=0)
+
         fingerprint_database_image2 = cv2.imread("now.png")
-# print(fingerprint_database_image2.shape)
         fingerprint_database_image2 = cv2.resize(fingerprint_database_image2,(90,90))
         fingerprint_database_image2 = cv2.cvtColor(fingerprint_database_image2, cv2.COLOR_BGR2GRAY)
         fingerprint_database_image2 = tf.expand_dims(fingerprint_database_image2,axis = -1)
         fingerprint_database_image2 = np.expand_dims(fingerprint_database_image2,axis=0)
-        fc2 = cnn_model.predict([fingerprint_database_image2,fingerprint_database_image2])
+        
+        fc2 = cnn_model.predict([fingerprint_database_image,fingerprint_database_image2])
         print(fc2[0])
         return jsonify({"fingerprint_encodings":fc2[0].tolist()})
         sift = cv2.SIFT_create()
@@ -138,11 +138,9 @@ def register_user():
         # print(user_data['fingerData'])
         faceEncodings = user_data['faceEncodings']
         fingerEncodings = user_data['fingerData']
-        # fingerEncodings = [float(string) for string in fingerEncodings]
-
-        # BLA
         BLA_intermediate = np.outer(np.transpose(np.array(faceEncodings)),np.array(fingerEncodings))
-        # BLA_intermediate = np.concatenate((faceEncodings,fingerEncodings),axis = 0)
+        print(faceEncodings)
+        print(fingerEncodings)
 
         
         list = []
@@ -158,8 +156,11 @@ def register_user():
                 now_bit = 1
             import math
             for ele in row:
-                
-                variance = np.square(ele-threshold_row)
+                variance = variance + np.square(ele-threshold_row)
+
+            variance = variance / (len(BLA_intermediate[0])) 
+
+            for ele in row:
                 now_val = np.abs(threshold_row - threshold)
                 reliability = 1 + math.erf(float(now_val)/float(np.sqrt(2*variance*variance)))
                 list.append([count1,count2,reliability])
