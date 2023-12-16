@@ -11,7 +11,7 @@ def string2array(s):
     arr = []
 
     for i in range(0,len(s)):
-        arr.append(int(s[i]) - ord('a'))
+        arr.append(int(s[i]))
     return arr
 
 def array2string(arr):
