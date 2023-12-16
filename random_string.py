@@ -15,6 +15,11 @@ def string2array(s):
     return arr
 
 def array2string(arr):
-    print("Hi")
+    # print("Hi")
+    # print(len(arr))
+    s = ""
+    for ele in arr:
+        s += chr(ele)
+    return s
     # arr = arr.astype('string')
-    return "".join([chr(item) for item in arr])
+    # return "".join([chr(item) for item in arr])

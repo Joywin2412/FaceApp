@@ -23,7 +23,7 @@ import subprocess
 # import rs decoder
 from reedsolo import RSCodec, ReedSolomonError
 # goign to vary this
-rsc = RSCodec(3)
+rsc = RSCodec(53)
 joywin_uri = "mongodb+srv://joy:ryHVuNxW2ATaMtyy@cluster0.vffdptk.mongodb.net/Cluster()?retryWrites=true&w=majority"
 uri = joywin_uri
 
@@ -50,21 +50,21 @@ def index():
 @app.route('/registerFace', methods=['GET'])
 def register_face():
     # Initialize the camera
-    # cap = cv2.VideoCapture(0)
-    # frame = ""
-    # while True:
-    #     ret, frame = cap.read()
-    #     cv2.imshow("Capture Photo", frame)
+    cap = cv2.VideoCapture(0)
+    frame = ""
+    while True:
+        ret, frame = cap.read()
+        cv2.imshow("Capture Photo", frame)
         
         
-    #     if cv2.waitKey(1) & 0xFF == ord('q'):
-    #         break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    # # Release the camera
-    # cap.release()
-    # cv2.destroyAllWindows()
+    # Release the camera
+    cap.release()
+    cv2.destroyAllWindows()
 
-    frame = cv2.imread("Image_db.png")
+    # frame = cv2.imread("Image_db.png")
     face_encodings = face_recognition.face_encodings(frame)
     # Extract face encodings from the photo
     
@@ -173,39 +173,38 @@ def register_user():
                 count2 = count2 + 1
             
             count1 = count1 + 1
-            # print(count1)
                 
         list.sort(key = lambda x : x[2])
                        
         count_keys = 100
         lc_count = 0
-        private_message = []
+        private_message = ""
         for val in list:
-            private_message.append(int(BLA_intermediate[val[0]][val[1]]))
+            private_message+=(str(int(BLA_intermediate[val[0]][val[1]])))
             lc_count = lc_count + 1
             if(lc_count == count_keys):
                 break
-        # print("encode")
-        # print(private_message)
+        
+                
+        # private_message = private_message.encode('utf8')
         import rsa
         import random_string
         import random
         import hashlib
-        special_string = random_string.get_random_string(150).encode('utf-8')
+        special_string = random_string.get_random_string(100).encode('utf-8')
         hashed = hashlib.sha256(special_string).hexdigest()
         encoded_private_message = rsc.encode(special_string)
-        encoded_private_arr = random_string.string2array(encoded_private_message)
-        print("Encoded below which we will get later")
+        # This extra error part must be kept safe
+        print("Encoded which I will use after")
         print(encoded_private_message)
-        print("The encoded array is")
-        print(encoded_private_arr)
+        print(private_message)
         for i in range(len(private_message),len(encoded_private_message)):
-            private_message.append(0)
+            private_message+='0'
         # padding
-
-        xr = []
-        for i in range(len(encoded_private_message)):
-            xr.append((private_message[i] ^ encoded_private_arr[i]))
+        private_message = private_message.encode('utf8')
+        def byte_xor(ba1, ba2):
+            return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+        xr = byte_xor(private_message , encoded_private_message )
         import rsa
         
         
@@ -284,35 +283,36 @@ def login_user():
                     
     count_keys = 100
     lc_count = 0
-    private_message = []
+    private_message = ""
     for val in list:
-        private_message.append(int(BLA_intermediate[val[0]][val[1]]))
+        private_message += str(int(BLA_intermediate[val[0]][val[1]]))
         lc_count = lc_count + 1
         if(lc_count == count_keys):
             break
     
     # get the xored data to be sent to decoder
 
-    encoded_message = []
+    
 
     for i in range(len(private_message),len(xor_data)):
-        private_message.append(0)
+        private_message += '0'
 
-    for i in range(0,len(xor_data)):
-        encoded_message.append(xor_data[i] ^ (private_message[i]))
+    def byte_xor(ba1, ba2):
+            return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+    private_message = private_message.encode('utf8')
+    encoded_message = byte_xor(private_message,xor_data)
+    print("This message is what I need. When conversion of this takes place.")
     print(encoded_message)
     import rsa
     import random_string
-    encoded_message = random_string.array2string(encoded_message)
-    encoded_message = bytes(encoded_message, encoding='utf8')
-    print("The encoded message is here:")
+    
     print(encoded_message)
     decoded_message = rsc.decode(encoded_message)[0]
     print("The actual decoded message which was the random string is : ")
     print(decoded_message)
     import hashlib
     hashed_auth = hashlib.sha256(decoded_message).hexdigest()
-    print("hashed someothing")
+    print("hashed something")
     print(hashed_auth)
     print(hashed_enroll)
     
